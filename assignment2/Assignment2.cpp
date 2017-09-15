@@ -3,6 +3,8 @@
 #include "common/Utility/Mesh/Simple/PrimitiveCreator.h"
 #include "common/Utility/Mesh/Loading/MeshLoader.h"
 #include <cmath>
+#include <fstream>
+#include <sstream>
 
 namespace
 {
@@ -90,12 +92,58 @@ void Assignment2::HandleWindowResize(float x, float y)
 void Assignment2::SetupExample1()
 {
     // Insert "Load and Compile Shaders" code here.
+	const std::string vertFilename = std::string(STRINGIFY(SHADER_PATH)) + "/hw2/hw2.vert";
+	const std::string fragFilename = std::string(STRINGIFY(SHADER_PATH)) + "/hw2/hw2.frag";
+	std::ifstream vShaderFile;
+	vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	std::ifstream fShaderFile;
+	fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+	std::string vertCode;
+	std::string fragCode;
+	try
+	{
+		// open files
+		vShaderFile.open(vertFilename);
+		fShaderFile.open(fragFilename);
+		std::stringstream vShaderStream, fShaderStream;
+		// read file's buffer contents into streams
+		vShaderStream << vShaderFile.rdbuf();
+		fShaderStream << fShaderFile.rdbuf();
+		// close file handlers
+		vShaderFile.close();
+		fShaderFile.close();
+		// convert stream into string
+		vertCode = vShaderStream.str();
+		fragCode = fShaderStream.str();
+	}
+	catch (std::ifstream::failure e)
+	{
+		std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << std::endl;
+	}
+	const char* vShaderCode = vertCode.c_str();
+	const char * fShaderCode = fragCode.c_str();
+	// 2. compile shaders
+	int success;
+	char infoLog[512];
+	// vertex shader
+	GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertex, 1, &vShaderCode, NULL);
+	glCompileShader(vertex);
+	// fragment Shader
+	GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragment, 1, &fShaderCode, NULL);
+	glCompileShader(fragment);
+	// shader Program
+	shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertex);
+	glAttachShader(shaderProgram, fragment);
+	glLinkProgram(shaderProgram);
 
     // Checkpoint 1.
     // Modify this part to contain your vertex shader ID, fragment shader ID, and shader program ID.
-    const GLuint vertexShaderId = 0;
-    const GLuint fragmentShaderId = 0;
-    const GLuint shaderProgramId = 0;
+    const GLuint vertexShaderId = vertex;
+    const GLuint fragmentShaderId = fragment;
+    const GLuint shaderProgramId = shaderProgram;
 
     // DO NOT EDIT OR REMOVE THE CODE IN THIS SECTION
     if (!VerifyShaderCompile(vertexShaderId) || !VerifyShaderCompile(fragmentShaderId) || !VerifyProgramLink(shaderProgramId)) {
